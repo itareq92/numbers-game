@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>صياد الأرقام</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&display=swap">
+<style>
+/* Layout: one phone-sized screen — HUD on top, a living sea stage below, chunky toy-like cards over it. Single committed underwater look. */
+:root{
+  color-scheme: light;
+  --sky1:#7fd8ff; --sky2:#d9f6ff;
+  --sea1:#21b3e0; --sea2:#0f74c2; --sea3:#0a3f86; --deep:#062a5e;
+  --sand:#ffd98a; --sand2:#f2b85c;
+  --sun:#ffc93c; --coral:#ff6b57; --coral2:#d9472f;
+  --mint:#3fd99a; --mint2:#1fa871; --berry:#ff5c9a; --berry2:#d93a78;
+  --ink:#16305c; --ink2:#4a5f86;
+  --card:#ffffff; --card2:#eef8ff;
+  --font: "Baloo Bhaijaan 2", "Tajawal", "Segoe UI", Tahoma, sans-serif;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--font);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#app{position:relative;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;
+  background:radial-gradient(120% 60% at 50% 0%, #1b5fb0 0%, var(--deep) 70%)}
+button{font-family:inherit;cursor:pointer;border:0}
+button:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+
+/* ---------- header ---------- */
+.top{flex:none;padding:10px 16px 8px;display:flex;flex-direction:column;gap:8px}
+.titleRow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+h1{margin:0;font-size:28px;line-height:1;font-weight:800;color:#fff;letter-spacing:0;
+  text-shadow:0 3px 0 var(--sea3),0 6px 14px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px}
+h1 svg{width:34px;height:34px}
+.tools{display:flex;gap:6px}
+.tbtn{width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.tbtn svg{width:22px;height:22px}
+.tbtn.off{opacity:.45}
+.tbtn.off::after{content:"";position:absolute;width:26px;height:3px;background:#fff;border-radius:2px;transform:rotate(-45deg)}
+.tbtn{position:relative}
+
+.hud{display:flex;align-items:center;gap:8px}
+.pill{background:rgba(255,255,255,.14);border-radius:16px;height:40px;display:flex;align-items:center;gap:6px;padding:0 12px;color:#fff;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);font-weight:800;font-size:18px}
+.hearts svg{width:24px;height:24px;transition:transform .3s}
+.hearts svg path{fill:#ff4d6d;stroke:#fff;stroke-width:1.4}
+.hearts svg.lost path{fill:rgba(255,255,255,.18);stroke:rgba(255,255,255,.35)}
+.hearts svg.breaking{animation:heartBreak .6s}
+@keyframes heartBreak{0%{transform:scale(1)}30%{transform:scale(1.5) rotate(-12deg)}60%{transform:scale(.8) rotate(10deg)}100%{transform:scale(1)}}
+.prog{flex:1;min-width:0}
+.prog .ico{width:26px;height:16px;flex:none}
+.bar{flex:1;height:12px;border-radius:8px;background:rgba(0,0,0,.25);overflow:hidden;min-width:30px}
+.bar i{display:block;height:100%;width:0;border-radius:8px;background:linear-gradient(90deg,var(--mint),#b8ff6a);transition:width .4s cubic-bezier(.3,1.6,.5,1)}
+#count{font-variant-numeric:tabular-nums;white-space:nowrap}
+#count.bump{animation:bump .4s}
+@keyframes bump{50%{transform:scale(1.4)}}
+.lvl{font-size:15px;padding:0 10px}
+
+.banner{background:var(--card);border-radius:18px;padding:8px 14px;min-height:46px;display:flex;align-items:center;justify-content:center;
+  text-align:center;font-size:19px;font-weight:700;color:var(--ink);box-shadow:0 4px 0 var(--sun),0 8px 18px rgba(0,0,0,.2);border:3px solid var(--sun)}
+.banner b{color:var(--coral);font-size:24px;margin:0 4px}
+.banner .eq{font-size:28px;font-weight:800;direction:rtl}
+.banner .qm{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--sun);color:var(--ink);font-style:normal;margin:0 4px;animation:qpulse 1.2s infinite}
+@keyframes qpulse{50%{transform:scale(1.12)}}
+.banner.flash{animation:bpop .45s}
+@keyframes bpop{40%{transform:scale(1.06)}}
+
+/* ---------- stage ---------- */
+.stage{position:relative;flex:1;min-height:0;margin:0 12px 12px;border-radius:24px;overflow:hidden;
+  box-shadow:0 0 0 3px rgba(255,255,255,.25),0 10px 30px rgba(0,0,0,.35);touch-action:manipulation}
+.sky{position:absolute;left:0;right:0;top:0;height:20%;background:linear-gradient(var(--sky1),var(--sky2))}
+.sun{position:absolute;top:12%;left:9%;width:46px;height:46px;border-radius:50%;background:var(--sun);
+  box-shadow:0 0 0 8px rgba(255,201,60,.35),0 0 0 16px rgba(255,201,60,.15);animation:sunspin 6s ease-in-out infinite}
+@keyframes sunspin{50%{transform:scale(1.08)}}
+.cloud{position:absolute;height:18px;border-radius:20px;background:#fff;opacity:.9}
+.cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.cloud::before{width:24px;height:24px;top:-12px;left:10px}
+.cloud::after{width:18px;height:18px;top:-8px;left:28px}
+.c1{width:62px;top:30%;right:-70px;animation:drift 28s linear infinite}
+.c2{width:48px;top:55%;right:-70px;animation:drift 40s linear infinite -18s}
+@keyframes drift{to{transform:translateX(-640px)}}
+.sea{position:absolute;left:0;right:0;top:20%;bottom:0;background:linear-gradient(var(--sea1) 0%,var(--sea2) 45%,var(--sea3) 100%)}
+.rays{position:absolute;left:0;right:0;top:20%;bottom:0;pointer-events:none;opacity:.18;
+  background:repeating-linear-gradient(100deg,transparent 0 40px,rgba(255,255,255,.7) 40px 70px,transparent 70px 140px);
+  -webkit-mask:linear-gradient(#000,transparent 70%);mask:linear-gradient(#000,transparent 70%)}
+.bubbles span{position:absolute;bottom:-20px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);
+  animation:rise linear infinite}
+@keyframes rise{to{transform:translateY(calc(-1 * var(--h,600px))) translateX(14px);opacity:0}}
+.seabed{position:absolute;left:0;right:0;bottom:0;height:14%;pointer-events:none}
+.seabed svg.sand{position:absolute;bottom:0;left:0;width:100%;height:100%}
+.weed{position:absolute;bottom:20%;transform-origin:50% 100%;animation:sway 3.4s ease-in-out infinite}
+@keyframes sway{50%{transform:rotate(6deg)}}
+.star{position:absolute;bottom:14%;width:30px}
+
+#fishLayer{position:absolute;inset:0}
+.fish{position:absolute;left:0;top:0;width:136px;height:74px;will-change:transform}
+.fish svg{width:100%;height:100%;display:block;overflow:visible}
+.fish.r svg{transform:scaleX(-1)}
+.fish .lbl{position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);font-weight:800;font-size:20px;color:var(--ink);white-space:nowrap;line-height:1;direction:rtl}
+.fish.big .lbl{font-size:27px}
+.fish.wrong svg{animation:shake .45s;filter:saturate(.3) brightness(.85)}
+.fish.hint svg{animation:glow 1s ease-in-out infinite}
+@keyframes glow{50%{filter:drop-shadow(0 0 10px #fff59a) drop-shadow(0 0 4px #fff)}}
+@keyframes shake{20%{translate:-6px 0}40%{translate:6px 0}60%{translate:-5px 0}80%{translate:4px 0}}
+.fish.r.wrong svg{animation:shakeR .45s}
+@keyframes shakeR{20%{transform:scaleX(-1) translateX(-6px)}40%{transform:scaleX(-1) translateX(6px)}60%{transform:scaleX(-1) translateX(-5px)}80%{transform:scaleX(-1) translateX(4px)}}
+
+#lineSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.boatWrap{position:absolute;left:56%;top:calc(20% - 86px);width:150px;height:110px;margin-left:-75px;pointer-events:none}
+.boat{position:relative;width:100%;height:100%;animation:bob 2.6s ease-in-out infinite;transform-origin:50% 90%}
+.boat svg{width:100%;height:100%;display:block}
+@keyframes bob{50%{transform:translateY(5px) rotate(-3deg)}}
+.boat .tip{position:absolute;left:146px;top:3px;width:1px;height:1px}
+.boat.cheer svg .arm{animation:cheer .5s 2}
+@keyframes cheer{50%{transform:rotate(-25deg)}}
+.waves{position:absolute;left:0;top:calc(20% - 12px);width:200%;height:30px;pointer-events:none;animation:waves 7s linear infinite}
+.waves svg{width:100%;height:100%;display:block}
+@keyframes waves{to{transform:translateX(50%)}}
+
+.say{position:absolute;top:10px;left:12px;max-width:calc(56% - 92px);background:#fff;color:var(--ink);border-radius:16px;padding:6px 12px;
+  font-weight:800;font-size:16px;line-height:1.3;box-shadow:0 4px 0 rgba(0,0,0,.12);pointer-events:none;
+  transform:scale(0);transform-origin:100% 100%;transition:transform .25s cubic-bezier(.3,1.7,.5,1)}
+.say::after{content:"";position:absolute;right:-8px;bottom:8px;border:8px solid transparent;border-left-color:#fff;border-right:0}
+.say.on{transform:scale(1)}
+
+.pop{position:absolute;pointer-events:none;transform:translate(-50%,-50%);font-weight:800;white-space:nowrap;text-align:center;
+  animation:popUp 1.3s ease-out forwards;line-height:1.15}
+.pop.good{color:#fff;font-size:26px;text-shadow:0 3px 0 var(--mint2),0 0 12px rgba(0,0,0,.25)}
+.pop.bad{background:#fff;color:var(--berry2);font-size:18px;padding:6px 12px;border-radius:14px;box-shadow:0 4px 0 var(--berry2)}
+.pop.bad small{display:block;font-size:14px;color:var(--ink2)}
+@keyframes popUp{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-60%) scale(1.1)}
+  75%{opacity:1;transform:translate(-50%,-110%) scale(1)}100%{opacity:0;transform:translate(-50%,-150%) scale(.95)}}
+.ripple{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:3px solid rgba(255,255,255,.7);pointer-events:none;animation:ripple .6s ease-out forwards}
+@keyframes ripple{to{transform:scale(3.2);opacity:0}}
+.streak{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);pointer-events:none;font-size:34px;font-weight:800;color:var(--sun);
+  text-shadow:0 4px 0 var(--coral2),0 0 20px rgba(0,0,0,.3);white-space:nowrap;animation:streak 1.4s ease-out forwards}
+@keyframes streak{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-10deg)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.2) rotate(3deg)}
+  80%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+
+/* ---------- modal ---------- */
+.modal{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;
+  background:rgba(4,25,60,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.card{width:100%;max-width:370px;max-height:100%;overflow:auto;background:var(--card);border-radius:28px;padding:22px 20px 20px;text-align:center;
+  border:4px solid var(--sun);box-shadow:0 8px 0 #e8a400,0 20px 40px rgba(0,0,0,.35);animation:cardIn .45s cubic-bezier(.3,1.5,.5,1)}
+@keyframes cardIn{from{transform:scale(.6) translateY(30px);opacity:0}}
+.card h2{margin:0 0 6px;font-size:28px;line-height:1.2;font-weight:800;text-wrap:balance}
+.card p{margin:6px 0;font-size:17px;line-height:1.55;color:var(--ink2);font-weight:500;text-wrap:balance}
+.card .kicker{display:inline-block;background:var(--card2);color:var(--sea2);border-radius:20px;padding:2px 14px;font-weight:800;font-size:15px;margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:8px 0 12px}
+.chip{border-radius:20px;padding:4px 16px;font-weight:800;font-size:20px;direction:rtl}
+.chip.g{background:#d6f8e6;color:#13804f;box-shadow:inset 0 -3px 0 #a5e9c6}
+.chip.b{background:#ffe0ec;color:var(--berry2);box-shadow:inset 0 -3px 0 #ffbcd5}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 26px;border-radius:20px;font-size:22px;font-weight:800;color:#fff;
+  background:var(--coral);box-shadow:0 6px 0 var(--coral2);transition:transform .1s,box-shadow .1s}
+.btn:active{transform:translateY(5px);box-shadow:0 1px 0 var(--coral2)}
+.btn.green{background:var(--mint);box-shadow:0 6px 0 var(--mint2)}
+.btn.green:active{box-shadow:0 1px 0 var(--mint2)}
+.btn.ghost{background:var(--card2);color:var(--sea2);box-shadow:0 5px 0 #c6e2f7;font-size:18px;min-height:48px}
+.btns{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:14px}
+.levels{display:grid;gap:10px;margin:14px 0 4px}
+.lvBtn{display:flex;align-items:center;gap:12px;background:var(--card2);border-radius:18px;padding:10px 14px;text-align:right;color:var(--ink);
+  box-shadow:0 5px 0 #c6e2f7;transition:transform .1s}
+.lvBtn:active{transform:translateY(4px);box-shadow:0 1px 0 #c6e2f7}
+.lvBtn .num{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:24px;font-weight:800;color:#fff;background:var(--sea2)}
+.lvBtn:nth-child(2) .num{background:var(--coral)}
+.lvBtn:nth-child(3) .num{background:#8a6be8}
+.lvBtn .txt{flex:1;min-width:0}
+.lvBtn .txt b{display:block;font-size:19px;line-height:1.2}
+.lvBtn .txt span{font-size:14px;color:var(--ink2)}
+.stars{display:flex;gap:2px;flex:none}
+.stars svg{width:20px;height:20px}
+.stars svg path,.bigStars svg path{fill:#dfe7f1}
+.stars svg.on path,.bigStars svg.on path{fill:var(--sun);stroke:#e8a400;stroke-width:1}
+.bigStars{display:flex;justify-content:center;gap:6px;margin:6px 0 4px}
+.bigStars svg{width:64px;height:64px}
+.bigStars svg:nth-child(2){transform:translateY(-12px)}
+.bigStars svg.on{animation:starIn .5s cubic-bezier(.3,1.8,.5,1) both}
+@keyframes starIn{from{transform:scale(0) rotate(-90deg)}}
+.bigStars svg:nth-child(2).on{animation-name:starIn2}
+@keyframes starIn2{from{transform:translateY(-12px) scale(0) rotate(-90deg)}to{transform:translateY(-12px)}}
+.hero svg{width:120px;height:72px}
+.hero{animation:heroSwim 3s ease-in-out infinite}
+@keyframes heroSwim{50%{transform:translateY(-6px) rotate(-3deg)}}
+.byline{margin:-4px 0 0;font-size:14px;font-weight:700;color:#cfe8ff;line-height:1.2}
+
+#confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
+
+@media (prefers-reduced-motion: reduce){
+  .bubbles span,.weed,.cloud,.waves,.boat,.sun,.hero,.banner .qm{animation:none!important}
+}
+@media (max-height:640px){
+  h1{font-size:24px} .top{gap:6px;padding-top:6px} .banner{font-size:17px;min-height:40px} .banner .eq{font-size:24px}
+}
+</style>
+</head>
+<body>
+
+<div id="app" dir="rtl">
+  <header class="top">
+    <div class="titleRow">
+      <h1>
+        <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 34 L30 6" stroke="#ffd98a" stroke-width="3" stroke-linecap="round"/><path d="M30 6 L30 22" stroke="#fff" stroke-width="1.5"/><path d="M30 22 v4 a3 3 0 0 1 -6 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="9" cy="30" r="4" fill="#ff6b57"/></svg>
+        صياد الأرقام
+      </h1>
+      <div class="tools">
+        <button class="tbtn" id="btnMusic" aria-label="الموسيقى"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 18.5a3 3 0 1 1-2-2.83V5l12-2v12.5a3 3 0 1 1-2-2.83V7.3l-8 1.33z"/></svg></button>
+        <button class="tbtn" id="btnSfx" aria-label="المؤثرات الصوتية"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+        <button class="tbtn" id="btnHome" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z"/></svg></button>
+      </div>
+    </div>
+    <p class="byline">إعداد: الطالب تركي بمساعدة والدته</p>
+    <div class="hud">
+      <div class="pill hearts" id="hearts"></div>
+      <div class="pill prog">
+        <svg class="ico" viewBox="0 0 140 76"><path d="M108 38 L138 12 Q130 38 138 64 Z" fill="#ffd23f"/><ellipse cx="62" cy="38" rx="56" ry="31" fill="#ffd23f"/><circle cx="24" cy="30" r="7" fill="#16305c"/></svg>
+        <span id="count">٠ / ١٠</span>
+        <div class="bar"><i id="barFill"></i></div>
+      </div>
+      <div class="pill lvl" id="lvlChip">المرحلة ١</div>
+    </div>
+    <div class="banner" id="banner"></div>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="sky"><div class="sun"></div><div class="cloud c1"></div><div class="cloud c2"></div></div>
+    <div class="sea"></div>
+    <div class="rays"></div>
+    <div class="bubbles" id="bubbles"></div>
+    <div class="seabed">
+      <svg class="sand" viewBox="0 0 400 60" preserveAspectRatio="none"><path d="M0 22 Q50 6 100 18 T200 16 T300 20 T400 12 V60 H0 Z" fill="#ffd98a"/><path d="M0 34 Q60 24 130 32 T260 30 T400 28 V60 H0 Z" fill="#f2b85c" opacity=".55"/></svg>
+      <svg class="weed" style="left:6%;width:26px;height:90px" viewBox="0 0 26 90"><path d="M13 90 C2 70 24 55 12 38 C2 24 20 12 14 0" stroke="#2fbf71" stroke-width="7" fill="none" stroke-linecap="round"/></svg>
+      <svg class="weed" style="left:13%;width:22px;height:60px;animation-delay:-1.2s" viewBox="0 0 22 60"><path d="M11 60 C2 45 20 35 10 20 C4 10 14 4 12 0" stroke="#1fa871" stroke-width="6" fill="none" stroke-linecap="round"/></svg>
+      <svg class="weed" style="left:82%;width:26px;height:80px;animation-delay:-2s" viewBox="0 0 26 80"><path d="M13 80 C24 62 2 50 14 34 C22 22 6 10 12 0" stroke="#2fbf71" stroke-width="7" fill="none" stroke-linecap="round"/></svg>
+      <svg class="weed" style="left:90%;width:20px;height:50px;animation-delay:-.6s" viewBox="0 0 20 50"><path d="M10 50 C2 38 18 28 9 16 C4 8 12 3 10 0" stroke="#ff8fab" stroke-width="6" fill="none" stroke-linecap="round"/></svg>
+      <svg class="star" style="left:62%" viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8-6.2 3.8 1.6-7L2 9.2l7.1-.6z" fill="#ff8a5b" stroke="#e2603a" stroke-width="1"/></svg>
+      <svg class="star" style="left:34%;width:22px;bottom:10%" viewBox="0 0 24 16"><path d="M2 14 Q12 -4 22 14 Z" fill="#ffc2d6"/><path d="M7 14 L10 6 M12 14 V4 M17 14 L14 6" stroke="#e0508f" stroke-width="1.2"/></svg>
+    </div>
+    <div id="fishLayer"></div>
+    <svg id="lineSvg"><path id="line" stroke="rgba(255,255,255,.9)" stroke-width="1.6" fill="none"/><path id="hook" stroke="#d8e3ee" stroke-width="2.6" fill="none" stroke-linecap="round"/><circle id="bobber" r="5" fill="#ff6b57" stroke="#fff" stroke-width="1.5"/></svg>
+    <div class="boatWrap"><div class="boat" id="boat">
+      <svg viewBox="0 0 150 110" overflow="visible" aria-hidden="true">
+        <line x1="92" y1="58" x2="146" y2="3" stroke="#8a5a2b" stroke-width="3.5" stroke-linecap="round"/>
+        <rect x="58" y="44" width="32" height="30" rx="10" fill="#ffc93c"/>
+        <rect x="58" y="60" width="32" height="6" fill="#ff6b57"/>
+        <g class="arm" style="transform-origin:86px 52px"><path d="M86 52 L96 58" stroke="#f2c299" stroke-width="7" stroke-linecap="round"/></g>
+        <path d="M62 52 L52 60" stroke="#f2c299" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="74" cy="30" r="16" fill="#f2c299"/>
+        <circle cx="68" cy="31" r="2.3" fill="#16305c"/><circle cx="80" cy="31" r="2.3" fill="#16305c"/>
+        <path d="M68 37 Q74 42 80 37" stroke="#16305c" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <circle cx="64" cy="36" r="3" fill="#ff8fab" opacity=".7"/><circle cx="84" cy="36" r="3" fill="#ff8fab" opacity=".7"/>
+        <ellipse cx="74" cy="18" rx="22" ry="5" fill="#0f74c2"/>
+        <path d="M60 18 Q60 4 74 4 Q88 4 88 18 Z" fill="#21b3e0"/>
+        <path d="M8 70 L142 70 Q134 100 110 102 L40 102 Q16 100 8 70 Z" fill="#ff6b57"/>
+        <path d="M11 78 L139 78" stroke="#fff" stroke-width="5"/>
+        <circle cx="48" cy="90" r="5" fill="#fff" opacity=".85"/><circle cx="102" cy="90" r="5" fill="#fff" opacity=".85"/>
+      </svg>
+      <div class="tip" id="tip"></div>
+    </div></div>
+    <div class="waves"><svg viewBox="0 0 800 30" preserveAspectRatio="none"><path d="M0 12 Q25 0 50 12 T100 12 T150 12 T200 12 T250 12 T300 12 T350 12 T400 12 T450 12 T500 12 T550 12 T600 12 T650 12 T700 12 T750 12 T800 12 V30 H0 Z" fill="rgba(33,179,224,.75)"/><path d="M0 12 Q25 0 50 12 T100 12 T150 12 T200 12 T250 12 T300 12 T350 12 T400 12 T450 12 T500 12 T550 12 T600 12 T650 12 T700 12 T750 12 T800 12" stroke="#fff" stroke-width="2.5" fill="none" opacity=".8"/></svg></div>
+    <div class="say" id="say"></div>
+    <div id="fx"></div>
+  </main>
+
+  <div class="modal" id="modal" hidden><div class="card" id="card"></div></div>
+  <canvas id="confetti"></canvas>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const AR = '٠١٢٣٤٥٦٧٨٩';
+const ar = n => String(n).replace(/\d/g, d => AR[d]);
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeInOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const GOAL = 10;
+
+/* ---------------- sound: everything synthesized, no files ---------------- */
+const Snd = (() => {
+  let ctx, master, mus, sfx, timer, step = 0, nextT = 0;
+  let musicOn = true, sfxOn = true;
+  try { const p = JSON.parse(localStorage.getItem('sayyad-audio') || '{}'); if (p.m === false) musicOn = false; if (p.s === false) sfxOn = false; } catch (e) {}
+  const save = () => { try { localStorage.setItem('sayyad-audio', JSON.stringify({ m: musicOn, s: sfxOn })); } catch (e) {} };
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  function init() {
+    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    ctx = new AC();
+    master = ctx.createGain(); master.gain.value = .9; master.connect(ctx.destination);
+    mus = ctx.createGain(); mus.gain.value = musicOn ? .55 : 0; mus.connect(master);
+    sfx = ctx.createGain(); sfx.gain.value = sfxOn ? 1 : 0; sfx.connect(master);
+    nextT = ctx.currentTime + .15; timer = setInterval(sched, 60);
+  }
+  function note(m, t, dur, o = {}) {
+    if (!ctx) return;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = o.type || 'triangle';
+    osc.frequency.setValueAtTime(mtof(m), t);
+    if (o.slide) osc.frequency.exponentialRampToValueAtTime(mtof(m + o.slide), t + dur);
+    const v = o.vol || .1;
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + (o.attack || .01));
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    osc.connect(g); g.connect(o.dest || sfx);
+    osc.start(t); osc.stop(t + dur + .05);
+  }
+  // cheerful 4-bar loop: C – Am – F – G, two phrases
+  const MEL = [
+    72,0,76,79, 81,79,76,0,  74,0,77,81, 79,77,74,0,  72,76,79,84, 81,79,76,74,  76,0,74,0, 72,0,0,0,
+    79,0,81,79, 76,0,72,0,   77,0,76,74, 72,0,69,0,   72,74,76,77, 79,81,79,77,  76,74,72,74, 72,0,0,0
+  ];
+  const CH = [[48, 55], [45, 52], [41, 48], [43, 50]];
+  const E = 60 / 116 / 2;
+  function sched() {
+    if (!ctx || ctx.state !== 'running') return;
+    while (nextT < ctx.currentTime + .3) {
+      const i = step % MEL.length, bar = Math.floor((i % 32) / 8);
+      const m = MEL[i];
+      if (m) note(m, nextT, E * 1.7, { type: 'triangle', vol: .07, dest: mus });
+      if (i % 8 === 0) { note(CH[bar][0], nextT, E * 3.6, { type: 'sine', vol: .14, dest: mus }); note(CH[bar][0] + 24, nextT, E * 1.2, { type: 'sine', vol: .03, dest: mus }); }
+      if (i % 8 === 4) note(CH[bar][1], nextT, E * 3.6, { type: 'sine', vol: .1, dest: mus });
+      if (i % 2 === 1) note(96, nextT, .03, { type: 'sine', vol: .012, dest: mus });
+      nextT += E; step++;
+    }
+  }
+  function noise(t, dur, freq, vol) {
+    if (!ctx) return;
+    const len = Math.floor(ctx.sampleRate * dur), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = .8;
+    const g = ctx.createGain(); g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(sfx); src.start(t);
+  }
+  const now = () => ctx ? ctx.currentTime : 0;
+  return {
+    init,
+    get musicOn() { return musicOn; }, get sfxOn() { return sfxOn; },
+    toggleMusic() { musicOn = !musicOn; if (mus) mus.gain.setTargetAtTime(musicOn ? .55 : 0, now(), .1); save(); return musicOn; },
+    toggleSfx() { sfxOn = !sfxOn; if (sfx) sfx.gain.setTargetAtTime(sfxOn ? 1 : 0, now(), .05); save(); return sfxOn; },
+    suspend() { if (ctx && ctx.state === 'running') ctx.suspend(); },
+    resume() { if (ctx && ctx.state === 'suspended') ctx.resume().then(() => { nextT = ctx.currentTime + .1; }); },
+    click() { const t = now(); note(88, t, .07, { type: 'sine', vol: .12 }); },
+    bubble() { const t = now(); note(rnd(76, 84), t, .12, { type: 'sine', vol: .12, slide: 10 }); },
+    plop() { const t = now(); noise(t, .18, 900, .35); note(70, t, .15, { type: 'sine', vol: .12, slide: 14 }); },
+    good() { const t = now(); [72, 76, 79, 84].forEach((m, i) => note(m, t + i * .07, .22, { type: 'triangle', vol: .18 })); note(96, t + .28, .3, { type: 'sine', vol: .06 }); },
+    bad() { const t = now(); note(62, t, .2, { type: 'triangle', vol: .22, slide: -2 }); note(57, t + .2, .35, { type: 'triangle', vol: .22, slide: -3 }); },
+    streak() { const t = now(); [72, 76, 79, 84, 88, 91].forEach((m, i) => note(m, t + i * .05, .16, { type: 'square', vol: .05 })); },
+    star(i) { const t = now(); note(84 + i * 3, t, .35, { type: 'sine', vol: .16 }); note(96 + i * 3, t, .25, { type: 'sine', vol: .05 }); },
+    win() { const t = now(); [[67, 0], [72, .12], [76, .24], [79, .36], [76, .52], [79, .62], [84, .74]].forEach(([m, d]) => note(m, t + d, d > .7 ? .7 : .2, { type: 'triangle', vol: .18 })); [48, 55, 60].forEach(m => note(m, t + .74, .8, { type: 'sine', vol: .1 })); },
+    lose() { const t = now(); [67, 64, 60, 55].forEach((m, i) => note(m, t + i * .18, .3, { type: 'triangle', vol: .16, slide: i === 3 ? -2 : 0 })); }
+  };
+})();
+
+/* ---------------- levels ---------------- */
+const LEVELS = [
+  {
+    title: 'أزواج العدد ١٠', sub: 'اصطد ما مجموعه ١٠', mode: 'sum', target: 10, speed: [32, 48], spawn: 1.25,
+    banner: () => `اصطد الأسماك التي مجموعها <b>${ar(10)}</b> فقط!`,
+    good() { const a = rnd(1, 9); return { label: `${ar(a)} + ${ar(10 - a)}`, sum: 10 }; },
+    bad() { let a, b; do { a = rnd(1, 9); b = rnd(1, 9); } while (a + b === 10 || Math.abs(a + b - 10) > 3); return { label: `${ar(a)} + ${ar(b)}`, sum: a + b }; },
+    intro: { text: `المس السمكة التي تحمل جملة مجموعها <b>${ar(10)}</b> لتصطادها.`, good: ['٤ + ٦', '٧ + ٣'], bad: ['٥ + ٤', '٨ + ٣'], warn: 'احذر! أسماك مخادعة تتخفّى بينها 🙈' }
+  },
+  {
+    title: 'أزواج العدد ١٠٠', sub: 'عشرات تكمل المئة', mode: 'sum', target: 100, speed: [36, 54], spawn: 1.15,
+    banner: () => `اصطد الأسماك التي مجموعها <b>${ar(100)}</b> فقط!`,
+    good() { const a = rnd(1, 9) * 10; return { label: `${ar(a)} + ${ar(100 - a)}`, sum: 100 }; },
+    bad() {
+      if (Math.random() < .4) { const a = rnd(1, 9); return { label: `${ar(a)} + ${ar(10 - a)}`, sum: 10 }; }
+      let a, b; do { a = rnd(1, 9) * 10; b = rnd(1, 9) * 10; } while (a + b === 100 || Math.abs(a + b - 100) > 20);
+      return { label: `${ar(a)} + ${ar(b)}`, sum: a + b };
+    },
+    intro: { text: `المس السمكة التي تحمل جملة مجموعها <b>${ar(100)}</b> لتصطادها.`, good: ['٤٠ + ٦٠', '٧٠ + ٣٠'], bad: ['٣ + ٧', '٤٠ + ٥٠'], warn: 'احذر! أسماك أزواج العدد ١٠ تتخفّى بينها 🙈' }
+  },
+  {
+    title: 'العدد المفقود', sub: 'أكمل حتى ١٠٠', mode: 'missing', target: 100, speed: [38, 58], spawn: 1.1, big: true,
+    banner: () => `<span class="eq">${ar(S.q)} + <i class="qm">؟</i> = ${ar(100)}</span>`,
+    good() { return { label: ar(S.answer), num: S.answer }; },
+    bad() {
+      if (Math.random() < .2 && S.q !== S.answer) return { label: ar(S.q), num: S.q };
+      let n; do { n = rnd(1, 9) * 10; } while (n === S.answer); return { label: ar(n), num: n };
+    },
+    intro: { text: 'انظر إلى السؤال في الأعلى، واصطد السمكة التي تحمل <b>العدد المفقود</b>.', good: ['٣٠ + ؟ = ١٠٠  ←  ٧٠'], bad: ['٣٠', '٦٠'], warn: 'السؤال يتغيّر بعد كل سمكة، فانتبه! 👀' }
+  }
+];
+
+const PRAISE = ['رائع!', 'أحسنت!', 'ممتاز!', 'شاطر!', 'برافو!', 'صيد موفّق!', 'عبقري!', 'واو!', 'مذهل!'];
+const SAY_GOOD = ['أحسنت! 🌟', 'شاطر يا بطل!', 'صيدة حلوة! 🐟', 'ممتاز! كمّل', 'رائع جداً!', 'عبقري! 🧠'];
+const SAY_BAD = ['قريبة! احسبها مرة ثانية', 'ركّز يا بطل 💪', 'لا بأس، جرّب غيرها', 'انتبه للمخادعة! 🙈'];
+const FISH_COLORS = [['#ff8a5b', '#e2603a'], ['#ffd23f', '#e8a400'], ['#5ee0a0', '#22b36f'], ['#ff7eb6', '#e0508f'], ['#7cc8ff', '#3d95e0'], ['#b79cff', '#8a6be8']];
+const FW = 136, FH = 74;
+
+/* ---------------- state ---------------- */
+const S = { li: 0, lv: LEVELS[0], hearts: 3, score: 0, playing: false, busy: false, streak: 0, miss: 0, q: 30, answer: 70,
+  fishes: [], lanes: [], laneDirs: [], W: 0, H: 0, spawnT: .3, hookAnim: null, hint: 0 };
+
+const stage = $('#stage'), fishLayer = $('#fishLayer'), fx = $('#fx');
+const lineEl = $('#line'), hookEl = $('#hook'), bobber = $('#bobber'), tipEl = $('#tip'), boatEl = $('#boat');
+
+function loadStars() { try { const v = JSON.parse(localStorage.getItem('sayyad-stars') || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+function saveStars(i, n) { const s = loadStars(); if (!(s[i] >= n)) { s[i] = n; try { localStorage.setItem('sayyad-stars', JSON.stringify(s)); } catch (e) {} } }
+
+/* ---------------- layout ---------------- */
+function layout() {
+  const r = stage.getBoundingClientRect(); S.W = r.width; S.H = r.height;
+  const top = S.H * .2 + 50, bottom = S.H * .87;
+  const n = Math.max(3, Math.min(5, Math.floor((bottom - top) / 84)));
+  const gap = (bottom - top) / n;
+  if (S.laneDirs.length !== n) S.laneDirs = Array.from({ length: n }, (_, i) => i % 2 ? 1 : -1);
+  S.lanes = Array.from({ length: n }, (_, i) => ({ y: top + gap * i + gap / 2, dir: S.laneDirs[i] }));
+  S.fishes.forEach(f => { if (f.lane >= n) f.lane = n - 1; });
+}
+window.addEventListener('resize', layout);
+
+function makeBubbles() {
+  const box = $('#bubbles');
+  for (let i = 0; i < 14; i++) {
+    const b = document.createElement('span'), s = rnd(6, 16);
+    b.style.cssText = `left:${rnd(2, 96)}%;width:${s}px;height:${s}px;animation-duration:${rnd(6, 13)}s;animation-delay:-${rnd(0, 12)}s;--h:${rnd(420, 700)}px`;
+    box.appendChild(b);
+  }
+}
+
+/* ---------------- fish ---------------- */
+function fishSVG(c, d) {
+  return `<svg viewBox="0 0 140 76" aria-hidden="true">
+    <path d="M108 38 L138 12 Q130 38 138 64 Z" fill="${d}"/>
+    <path d="M46 10 Q66 -6 90 12 Z" fill="${d}"/>
+    <path d="M60 64 Q70 80 82 64 Z" fill="${d}"/>
+    <ellipse cx="62" cy="38" rx="56" ry="31" fill="${c}"/>
+    <ellipse cx="70" cy="41" rx="41" ry="20" fill="#fff" opacity=".93"/>
+    <circle cx="22" cy="30" r="8" fill="#fff"/><circle cx="20" cy="30" r="4.3" fill="#1b2340"/><circle cx="18.5" cy="28.3" r="1.6" fill="#fff"/>
+    <path d="M9 45 Q15 50 21 45" stroke="#1b2340" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <circle cx="31" cy="45" r="4" fill="#ff8fab" opacity=".7"/>
+  </svg>`;
+}
+function isCorrect(f) { return S.lv.mode === 'sum' ? f.d.sum === S.lv.target : f.d.num === S.answer; }
+
+function spawn() {
+  const live = S.fishes.filter(f => !f.caught && !f.flee);
+  const haveGood = live.some(isCorrect);
+  if (live.length >= S.lanes.length + 2 && haveGood) return;
+  const good = !haveGood || Math.random() < .45;
+  for (const i of shuffle(S.lanes.map((_, k) => k))) {
+    const L = S.lanes[i];
+    const x = L.dir > 0 ? -FW / 2 - 6 : S.W + FW / 2 + 6;
+    if (S.fishes.some(f => f.lane === i && !f.caught && Math.abs(f.x - x) < FW + 50)) continue;
+    const d = good ? S.lv.good() : S.lv.bad();
+    const [c, dk] = pick(FISH_COLORS);
+    const el = document.createElement('div');
+    el.className = 'fish' + (L.dir > 0 ? ' r' : '') + (S.lv.big ? ' big' : '');
+    el.innerHTML = fishSVG(c, dk) + `<span class="lbl">${d.label}</span>`;
+    fishLayer.appendChild(el);
+    const scale = Math.min(1.35, Math.max(.85, S.W / 380));
+    S.fishes.push({ el, d, lane: i, x, dir: L.dir, speed: rnd(S.lv.speed[0], S.lv.speed[1]) * scale, bob: Math.random() * 6, caught: false, flee: false, cx: 0, cy: 0, rot: 0, s: 1 });
+    return;
+  }
+}
+function clearFish() { S.fishes.forEach(f => f.el.remove()); S.fishes = []; S.hookAnim = null; S.busy = false; }
+
+/* ---------------- hook + main loop ---------------- */
+let last = performance.now();
+function tipPos() {
+  const s = stage.getBoundingClientRect(), t = tipEl.getBoundingClientRect();
+  return { x: t.left - s.left, y: t.top - s.top };
+}
+function loop(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  S.spawnT -= dt;
+  if (S.spawnT <= 0) { spawn(); S.spawnT = S.lv.spawn * (S.playing ? 1 : 1.6); }
+
+  for (let i = S.fishes.length - 1; i >= 0; i--) {
+    const f = S.fishes[i];
+    if (f.caught) continue;
+    f.x += f.dir * f.speed * dt * (f.flee ? 3.4 : 1);
+    f.bob += dt * 2.2;
+    const y = S.lanes[f.lane].y + Math.sin(f.bob) * 5;
+    f.y = y;
+    if (f.x < -FW || f.x > S.W + FW) { f.el.remove(); S.fishes.splice(i, 1); continue; }
+    f.el.style.transform = `translate(${f.x - FW / 2}px,${y - FH / 2}px)`;
+  }
+
+  const tip = tipPos();
+  let hx = tip.x + Math.sin(now / 700) * 4, hy = tip.y + 56;
+  const A = S.hookAnim;
+  if (A) {
+    const f = A.fish;
+    if (A.phase === 'down') {
+      const p = Math.min(1, (now - A.t0) / 260), e = easeOut(p);
+      const tx = f.x + (f.dir > 0 ? FW / 2 - 14 : -FW / 2 + 14), ty = f.y - 6;
+      hx = lerp(A.fx, tx, e); hy = lerp(A.fy, ty, e);
+      if (p >= 1) { A.phase = 'up'; A.t0 = now; A.fx = tx; A.fy = ty; Snd.plop(); f.el.classList.remove('hint'); }
+    } else {
+      const p = Math.min(1, (now - A.t0) / 560), e = easeInOut(p);
+      hx = lerp(A.fx, tip.x, e); hy = lerp(A.fy, tip.y + 34, e);
+      const s = 1 - .55 * e, rot = f.dir > 0 ? -90 * Math.min(1, p * 3) : 90 * Math.min(1, p * 3);
+      const cy = hy + (FW / 2) * s - 8;
+      f.el.style.transform = `translate(${hx - FW / 2}px,${cy - FH / 2}px) rotate(${rot}deg) scale(${s})`;
+      if (p >= 1) { f.el.remove(); S.fishes.splice(S.fishes.indexOf(f), 1); S.hookAnim = null; landed(f); }
+    }
+    if (S.hookAnim) A.hx = hx;
+  }
+  lineEl.setAttribute('d', `M${tip.x} ${tip.y} Q${(tip.x + hx) / 2 + 6} ${(tip.y + hy) / 2 + 10} ${hx} ${hy}`);
+  hookEl.setAttribute('d', `M${hx} ${hy} l0 11 a5.5 5.5 0 0 1 -11 0 l0 -3`);
+  bobber.setAttribute('cx', (tip.x + hx) / 2 + 3); bobber.setAttribute('cy', Math.min(hy - 10, tip.y + 22));
+  bobber.style.display = A ? 'none' : '';
+  requestAnimationFrame(loop);
+}
+
+/* ---------------- interaction ---------------- */
+stage.addEventListener('pointerdown', e => {
+  const r = stage.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (!S.playing) return;
+  const el = e.target.closest('.fish');
+  const f = el && S.fishes.find(o => o.el === el);
+  if (!f || f.caught || f.flee) { if (y > S.H * .2) { ripple(x, y); Snd.bubble(); } return; }
+  if (S.busy) return;
+  if (isCorrect(f)) catchFish(f); else wrongFish(f);
+});
+
+function catchFish(f) {
+  S.busy = true; f.caught = true; S.miss = 0;
+  const t = tipPos();
+  S.hookAnim = { phase: 'down', t0: performance.now(), fish: f, fx: t.x, fy: t.y + 56 };
+  S.streak++;
+  popup(f.x, f.y - 30, `⭐ ${pick(PRAISE)}`, 'good');
+  Snd.good();
+}
+function landed() {
+  S.score++; S.busy = false;
+  renderHUD(true);
+  boatEl.classList.remove('cheer'); void boatEl.offsetWidth; boatEl.classList.add('cheer');
+  if (S.streak > 0 && S.streak % 3 === 0 && S.score < GOAL) {
+    const t = document.createElement('div'); t.className = 'streak';
+    t.textContent = S.streak >= 6 ? `🔥 ${ar(S.streak)} متتالية! 🔥` : '🔥 سلسلة نارية! 🔥';
+    fx.appendChild(t); setTimeout(() => t.remove(), 1500); Snd.streak();
+  } else say(pick(SAY_GOOD));
+  if (S.score >= GOAL) { S.playing = false; setTimeout(levelDone, 500); return; }
+  if (S.lv.mode === 'missing') { newQuestion(); renderBanner(true); }
+}
+function wrongFish(f) {
+  S.hearts--; S.streak = 0; S.miss++;
+  f.el.classList.add('wrong'); f.flee = true;
+  const lv = S.lv;
+  const msg = lv.mode === 'sum'
+    ? `${f.d.label} = ${ar(f.d.sum)}<small>وليس ${ar(lv.target)}</small>`
+    : `${ar(S.q)} + ${ar(f.d.num)} = ${ar(S.q + f.d.num)}<small>وليس ${ar(100)}</small>`;
+  popup(Math.min(Math.max(f.x, 80), S.W - 80), f.y - 20, msg, 'bad');
+  Snd.bad(); say(pick(SAY_BAD));
+  renderHUD(false, true);
+  if (S.hearts <= 0) { S.playing = false; setTimeout(gameOver, 1100); return; }
+  if (S.miss >= 2) showHint();
+}
+function showHint() {
+  const g = S.fishes.find(f => !f.caught && !f.flee && isCorrect(f) && f.x > 60 && f.x < S.W - 60);
+  if (!g) return;
+  g.el.classList.add('hint'); say('السمكة اللامعة هي الصح ✨');
+  setTimeout(() => g.el.classList.remove('hint'), 3500);
+}
+function newQuestion() {
+  let q; do { q = rnd(1, 9) * 10; } while (q === S.q);
+  S.q = q; S.answer = 100 - q;
+}
+
+/* ---------------- fx ---------------- */
+function popup(x, y, html, cls) {
+  const p = document.createElement('div'); p.className = 'pop ' + cls; p.innerHTML = html;
+  p.style.left = x + 'px'; p.style.top = y + 'px'; fx.appendChild(p);
+  setTimeout(() => p.remove(), 1400);
+}
+function ripple(x, y) {
+  const r = document.createElement('div'); r.className = 'ripple'; r.style.left = x + 'px'; r.style.top = y + 'px';
+  fx.appendChild(r); setTimeout(() => r.remove(), 650);
+}
+let sayT;
+function say(t) {
+  const el = $('#say'); el.textContent = t; el.classList.add('on');
+  clearTimeout(sayT); sayT = setTimeout(() => el.classList.remove('on'), 1800);
+}
+
+const confetti = (() => {
+  const cv = $('#confetti'), cx = cv.getContext('2d'); let parts = [], running = false;
+  const COLS = ['#ffc93c', '#ff6b57', '#3fd99a', '#ff5c9a', '#7cc8ff', '#b79cff', '#ffffff'];
+  function fire(n = 140) {
+    const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = r.width * dpr; cv.height = r.height * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (let i = 0; i < n; i++) parts.push({ x: r.width / 2 + (Math.random() - .5) * 60, y: r.height * .35, vx: (Math.random() - .5) * 520, vy: -Math.random() * 520 - 180,
+      w: rnd(6, 11), h: rnd(8, 14), rot: Math.random() * 6, vr: (Math.random() - .5) * 12, c: pick(COLS), life: 0 });
+    if (!running) { running = true; let t0 = performance.now();
+      const step = t => { const dt = Math.min(.04, (t - t0) / 1000); t0 = t; cx.clearRect(0, 0, r.width, r.height);
+        parts = parts.filter(p => (p.life += dt) < 3.2 && p.y < r.height + 20);
+        for (const p of parts) { p.vy += 700 * dt; p.vx *= .99; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
+          cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot); cx.globalAlpha = Math.max(0, 1 - p.life / 3.2); cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.rot))); cx.restore(); }
+        if (parts.length) requestAnimationFrame(step); else { running = false; cx.clearRect(0, 0, r.width, r.height); } };
+      requestAnimationFrame(step); }
+  }
+  return fire;
+})();
+
+/* ---------------- HUD ---------------- */
+const HEART = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 2.9 5 6.4 5c2 0 3.6 1.1 4.6 2.6l1 1.4 1-1.4C14 6.1 15.6 5 17.6 5 21.1 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z"/></svg>';
+const STAR = '<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8-6.2 3.8 1.6-7L2 9.2l7.1-.6z"/></svg>';
+function renderHUD(bump, broke) {
+  const h = $('#hearts'); h.innerHTML = HEART.repeat(3);
+  [...h.children].forEach((s, i) => { if (i >= S.hearts) s.classList.add('lost'); if (broke && i === S.hearts) s.classList.add('breaking'); });
+  const c = $('#count'); c.textContent = `${ar(S.score)} / ${ar(GOAL)}`;
+  if (bump) { c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
+  $('#barFill').style.width = (S.score / GOAL * 100) + '%';
+  $('#lvlChip').textContent = `المرحلة ${ar(S.li + 1)}`;
+}
+function renderBanner(pop) {
+  const b = $('#banner'); b.innerHTML = S.lv.banner();
+  if (pop) { b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); }
+}
+
+/* ---------------- screens ---------------- */
+const modal = $('#modal'), card = $('#card');
+function show(html) { card.innerHTML = html; modal.hidden = false; card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; }
+function hide() { modal.hidden = true; }
+const starsRow = (n, cls = 'stars') => `<div class="${cls}">${[0, 1, 2].map(i => STAR.replace('<svg', `<svg class="${i < n ? 'on' : ''}"`)).join('')}</div>`;
+
+function welcome() {
+  S.playing = false; clearFish();
+  const st = loadStars();
+  show(`
+    <div class="hero">${fishSVG('#ffd23f', '#e8a400')}</div>
+    <h2>أهلاً بك يا صياد! 🌊</h2>
+    <p>اصطد الأسماك التي تحمل الإجابة الصحيحة، وانتبه من الأسماك المخادعة.</p>
+    <div class="levels">
+      ${LEVELS.map((l, i) => `<button class="lvBtn" data-lv="${i}"><span class="num">${ar(i + 1)}</span><span class="txt"><b>${l.title}</b><span>${l.sub}</span></span>${starsRow(st[i] || 0)}</button>`).join('')}
+    </div>`);
+}
+function intro(i) {
+  S.li = i; S.lv = LEVELS[i]; clearFish();
+  if (S.lv.mode === 'missing') newQuestion();
+  S.hearts = 3; S.score = 0; renderHUD(); renderBanner();
+  const t = S.lv.intro;
+  show(`
+    <span class="kicker">المرحلة ${ar(i + 1)}</span>
+    <h2>${S.lv.title}</h2>
+    <p>${t.text}</p>
+    <div class="chips">${t.good.map(g => `<span class="chip g">${g}</span>`).join('')}</div>
+    <p>${t.warn}</p>
+    <div class="chips">${t.bad.map(g => `<span class="chip b">${g}</span>`).join('')}</div>
+    <p>اصطد <b>${ar(GOAL)}</b> أسماك صحيحة، ولديك <b>${ar(3)}</b> قلوب.</p>
+    <div class="btns"><button class="btn" data-act="go">ابدأ الصيد 🎣</button></div>`);
+}
+function startLevel() {
+  hide(); clearFish();
+  S.laneDirs = shuffle(S.laneDirs.slice()); layout();
+  S.hearts = 3; S.score = 0; S.streak = 0; S.miss = 0;
+  renderHUD(); renderBanner(true);
+  S.playing = true; S.spawnT = .1;
+  setTimeout(spawn, 400); setTimeout(spawn, 900);
+  say('يلا نصطاد! 🎣');
+}
+function levelDone() {
+  const n = S.hearts; saveStars(S.li, n);
+  const last = S.li === LEVELS.length - 1;
+  const msg = n === 3 ? 'صيد مثالي بدون أي خطأ! 🏅' : n === 2 ? 'رائع جداً! أنت صياد ماهر.' : 'أحسنت! في المرة القادمة حافظ على قلوبك.';
+  Snd.win(); confetti();
+  show(`
+    <span class="kicker">المرحلة ${ar(S.li + 1)}</span>
+    <h2>أحسنت! اصطدت ${ar(GOAL)} أسماك 🎉</h2>
+    ${starsRow(0, 'bigStars')}
+    <p>${msg}</p>
+    <div class="btns">
+      <button class="btn green" data-act="${last ? 'final' : 'next'}">${last ? 'استلم الكأس 🏆' : 'المرحلة التالية ←'}</button>
+      <button class="btn ghost" data-act="retry">أعد المرحلة</button>
+    </div>`);
+  const svgs = card.querySelectorAll('.bigStars svg');
+  for (let i = 0; i < n; i++) setTimeout(() => { svgs[i].classList.add('on'); Snd.star(i); }, 450 + i * 380);
+}
+function gameOver() {
+  Snd.lose();
+  show(`
+    <h2>انتهت القلوب 💔</h2>
+    <p>لا بأس! حتى أمهر الصيادين تفلت منهم سمكة أحياناً.</p>
+    <p>اصطدت <b>${ar(S.score)}</b> من ${ar(GOAL)}، وتقدر تكمّل أفضل المرة الجاية!</p>
+    <div class="btns">
+      <button class="btn" data-act="retry">حاول مرة ثانية 💪</button>
+      <button class="btn ghost" data-act="menu">القائمة</button>
+    </div>`);
+}
+function final() {
+  const st = loadStars(), total = st.reduce((a, b) => a + (b || 0), 0);
+  Snd.win(); confetti(220); setTimeout(() => confetti(160), 900);
+  show(`
+    <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <path d="M30 18 H90 V44 A30 30 0 0 1 30 44 Z" fill="#ffc93c" stroke="#e8a400" stroke-width="3"/>
+      <path d="M30 26 H14 Q12 48 34 54 M90 26 H106 Q108 48 86 54" stroke="#e8a400" stroke-width="5" fill="none"/>
+      <rect x="54" y="72" width="12" height="18" fill="#e8a400"/><rect x="36" y="90" width="48" height="14" rx="4" fill="#ff6b57"/>
+      <path d="M60 28 l4 8 9 1 -7 6 2 9 -8 -5 -8 5 2 -9 -7 -6 9 -1z" fill="#fff"/>
+    </svg>
+    <h2>أنت بطل الأرقام! 🏆</h2>
+    <p>أنهيت كل المراحل وجمعت <b>${ar(total)}</b> نجمة من ${ar(9)}.</p>
+    <p>تعرف الآن أزواج العدد ١٠ وأزواج العدد ١٠٠، وتعرف كيف تجد العدد المفقود.</p>
+    <div class="btns"><button class="btn green" data-act="menu">العب من جديد</button></div>`);
+}
+
+card.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  Snd.init(); Snd.click();
+  if (b.dataset.lv != null) return intro(+b.dataset.lv);
+  const a = b.dataset.act;
+  if (a === 'go' || a === 'retry') startLevel();
+  else if (a === 'next') intro(S.li + 1);
+  else if (a === 'menu') welcome();
+  else if (a === 'final') final();
+});
+
+/* ---------------- toolbar ---------------- */
+const bm = $('#btnMusic'), bs = $('#btnSfx');
+const syncTools = () => { bm.classList.toggle('off', !Snd.musicOn); bs.classList.toggle('off', !Snd.sfxOn); };
+bm.addEventListener('click', () => { Snd.init(); Snd.toggleMusic(); syncTools(); });
+bs.addEventListener('click', () => { Snd.init(); Snd.toggleSfx(); Snd.click(); syncTools(); });
+$('#btnHome').addEventListener('click', () => { Snd.init(); Snd.click(); welcome(); });
+document.addEventListener('visibilitychange', () => document.hidden ? Snd.suspend() : Snd.resume());
+document.addEventListener('pointerdown', () => Snd.init(), { once: true });
+
+/* ---------------- boot ---------------- */
+syncTools(); makeBubbles(); layout();
+renderHUD(); renderBanner();
+welcome();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(loop); });
+})();
+</script>
+</body>
+</html>
